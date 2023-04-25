@@ -50,11 +50,8 @@ class MultiValueConfigParser:
     def read_data(self):
         sections_added = set()
         current_section = None
-        curkey = None
-        lineno = -1
 
         for line in self.source_file:
-            lineno += 1
             if not line.strip():
                 continue
             if line.startswith((' ', '\t')):
@@ -69,7 +66,6 @@ class MultiValueConfigParser:
                         else:
                             current_section = self.sections[section_name] = []
                             sections_added.add(section_name)
-                        print(f"Section: {section_name}")
                     else:
                         raise Exception("Missing Section Header Name Error")
                 elif current_section is None:
@@ -86,16 +82,9 @@ def extract_number_from_key(key, section_name):
     return result
 
 
-with open(FILENAME["SOURCE"], 'r') as source_ini_file:
-    # Read the ini data and sort sections
-    config = MultiValueConfigParser(source_ini_file)
-    config.read_data()
-
-    sorted_sections = sorted(config.sections, key=lambda k: k.lower())
-    print(sorted_sections)
-
-    # Sort lines within each section
+def get_sorted_file_stream():
     output = StringIO()
+    # Sort lines within each section
     for cfg_section_name in sorted_sections:
         output.write(f'[{cfg_section_name}]\n')
         sorted_keys = sorted(
@@ -105,10 +94,22 @@ with open(FILENAME["SOURCE"], 'r') as source_ini_file:
         for line in sorted_keys:
             output.write(f'{line}\n')
         output.write('\n')
+    return output
+
+
+with open(FILENAME["SOURCE"], 'r') as source_ini_file:
+    # Read the ini data and sort sections
+    config = MultiValueConfigParser(source_ini_file)
+    config.read_data()
+
+    sorted_sections = sorted(config.sections, key=lambda k: k.lower())
+    print(f"Sections: \n{sorted_sections}")
+
+    file_output = get_sorted_file_stream()
 
     # Save the sorted ini data to a new file
     with open(FILENAME["TARGET"], 'w') as target_file:
-        target_file.write(output.getvalue())
-        output.close()
+        target_file.write(file_output.getvalue())
+        file_output.close()
 
 print(f'File \"{FILENAME["TARGET"]}\" created with sorted contents.')

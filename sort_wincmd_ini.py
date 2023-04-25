@@ -30,6 +30,11 @@ SPECIAL_SORTING_SECTIONS = [
     "user"
 ]
 
+FILENAME = {
+    "SOURCE": "wincmd.ini",
+    "TARGET": "wincmd.sorted.ini",
+}
+
 
 class MultiValueDict(defaultdict):
     def __init__(self, *args, **kwargs):
@@ -99,11 +104,11 @@ def extract_number_from_key(key, section_name):
     return result
 
 
-with open('wincmd_source.ini', 'r') as wincmd_ini_file:
+with open(FILENAME["SOURCE"], 'r') as source_ini_file:
     # ini_file = f.read()
 
     # Read the ini data and sort sections
-    config = MultiValueConfigParser(wincmd_ini_file)
+    config = MultiValueConfigParser(source_ini_file)
     config.read_data()
 
     sorted_sections = sorted(config.sections, key=lambda k: k.lower())
@@ -111,11 +116,12 @@ with open('wincmd_source.ini', 'r') as wincmd_ini_file:
 
     # Sort lines within each section
     output = StringIO()
-    for section_name in sorted_sections:
-        output.write(f'[{section_name}]\n')
-        # sorted_keys = sorted(config[section])
-        # print(f'config[section_name]:  {config.sections[section_name]}')
-        sorted_keys = sorted(config.sections[section_name], key=lambda k: (extract_number_from_key(k, section_name), k.lower()))
+    for cfg_section_name in sorted_sections:
+        output.write(f'[{cfg_section_name}]\n')
+        sorted_keys = sorted(\
+            config.sections[cfg_section_name],
+            key=lambda k: (extract_number_from_key(k, cfg_section_name), k.lower())
+        )
 
         # for line in sorted(config.sections[section_name]):
         for line in sorted_keys:
@@ -125,8 +131,8 @@ with open('wincmd_source.ini', 'r') as wincmd_ini_file:
         output.write('\n')
 
     # Save the sorted ini data to a new file
-    with open('wincmd_sorted.ini', 'w') as f:
+    with open(FILENAME["TARGET"], 'w') as f:
         f.write(output.getvalue())
 
         output.close()
-print("File sorted_wincmd.ini created with sorted contents.")
+print(f'File \"{FILENAME["TARGET"]}\" created with sorted contents.')

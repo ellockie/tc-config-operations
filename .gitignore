@@ -5,5 +5,7 @@
 
 # FILES
 
+wincmd.ini
+wincmd.sorted.ini
 wincmd_sorted.ini
 wincmd_source.ini

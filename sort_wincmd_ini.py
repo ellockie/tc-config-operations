@@ -34,6 +34,7 @@ FILENAME = {
     "SOURCE": "wincmd.ini",
     "TARGET": "wincmd.sorted.ini",
 }
+NUMBER_REGEX = re.compile(r'^([a-zA-Z_]*)(\d+)(\w*)=')
 
 
 class MultiValueDict(defaultdict):
@@ -44,7 +45,6 @@ class MultiValueDict(defaultdict):
 class MultiValueConfigParser:
     def __init__(self, ini_file):
         self.source_file = ini_file
-        # print(f"ini_file: {len(ini_file)}")
         self.sections = {}
 
     def read_data(self):
@@ -53,24 +53,15 @@ class MultiValueConfigParser:
         curkey = None
         lineno = -1
 
-        # for lineno, line in enumerate(self.source_data, start=1):
-
-        # for lineno, line in self.source_file:
         for line in self.source_file:
             lineno += 1
             if not line.strip():
                 continue
             if line.startswith((' ', '\t')):
-                if curkey:
-                    value = line.strip()
-                    if value:
-                        current_section[curkey].append(value)
+                continue
             else:
-                # print(f"line: {lineno}: {line}")
                 if line.startswith('['):
                     end = line.find(']')
-
-                    # print(f"end: {end}")
                     if end > 0:
                         section_name = line[1:end].strip()
                         if section_name in sections_added:
@@ -81,32 +72,21 @@ class MultiValueConfigParser:
                         print(f"Section: {section_name}")
                     else:
                         raise Exception("Missing Section Header Name Error")
-                        # raise configparser.MissingSectionHeaderError(fpname, lineno, line)
                 elif current_section is None:
                     raise Exception("MissingSectionHeaderError")
-                    # raise configparser.MissingSectionHeaderError(fpname, lineno, line)
                 else:
                     current_section.append(line.strip())
-                    # key, value = line.split('=', 1)
-                    # key = key.strip()
-                    # value = value.strip()
-                    # curkey = key
 
 
 def extract_number_from_key(key, section_name):
     if section_name not in SPECIAL_SORTING_SECTIONS:
         return ''
-    match = re.search(r'^([a-zA-Z_]*)(\d+)(\w*)=', key)
+    match = re.search(NUMBER_REGEX, key)
     result = f'{match.group(1)}_{match.group(2).rjust(10, "0")}_{match.group(3)} ::: {key}' if match else ''
-
-    # if result != '':
-    #     print(result)
     return result
 
 
 with open(FILENAME["SOURCE"], 'r') as source_ini_file:
-    # ini_file = f.read()
-
     # Read the ini data and sort sections
     config = MultiValueConfigParser(source_ini_file)
     config.read_data()
@@ -118,21 +98,17 @@ with open(FILENAME["SOURCE"], 'r') as source_ini_file:
     output = StringIO()
     for cfg_section_name in sorted_sections:
         output.write(f'[{cfg_section_name}]\n')
-        sorted_keys = sorted(\
+        sorted_keys = sorted(
             config.sections[cfg_section_name],
             key=lambda k: (extract_number_from_key(k, cfg_section_name), k.lower())
         )
-
-        # for line in sorted(config.sections[section_name]):
         for line in sorted_keys:
-            # for value in config[section][key]:
-            #     output.write(f'{key}={value}\n')
             output.write(f'{line}\n')
         output.write('\n')
 
     # Save the sorted ini data to a new file
-    with open(FILENAME["TARGET"], 'w') as f:
-        f.write(output.getvalue())
-
+    with open(FILENAME["TARGET"], 'w') as target_file:
+        target_file.write(output.getvalue())
         output.close()
+
 print(f'File \"{FILENAME["TARGET"]}\" created with sorted contents.')
